@@ -1,3 +1,7 @@
+# import libraries
+import warnings
+warnings.simplefilter("ignore", UserWarning)
+
 import sys
 import re
 import string
@@ -6,6 +10,7 @@ from sqlalchemy import create_engine
 
 import numpy as np
 import pandas as pd
+import joblib
 
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
@@ -15,56 +20,13 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import SVC
-from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 from sklearn.utils.fixes import loguniform
 
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem.wordnet import WordNetLemmatizer
-from nltk.tokenize import word_tokenize
-nltk.download(['punkt', 'wordnet', 'stopwords', 'averaged_perceptron_tagger'])
-
-
-class StartingVerbExtractor(BaseEstimator, TransformerMixin):
-    """
-    Custom transformer to extract whether the text starts with a verb.
-    """
-
-    def starting_verb(self, text):
-        """
-        Check if the input text starts with a verb.
-        
-        Args:
-        text: str, input text.
-        
-        Returns:
-        bool, True if the text starts with a verb, False otherwise.
-        """
-        for sentence in nltk.sent_tokenize(text):
-            pos_tags = nltk.pos_tag(tokenize(sentence))
-            if len(pos_tags) > 0:
-                first_word, first_tag = pos_tags[0]
-                if first_tag in ['VB', 'VBP'] or first_word == 'RT':
-                    return True
-        return False
-
-    def fit(self, x, y=None):
-        return self
-
-    def transform(self, X):
-        """
-        Transform the input data by applying the 'starting_verb' method.
-        
-        Args:
-        X: DataFrame or Series, input data.
-        
-        Returns:
-        DataFrame, transformed data with an additional column.
-        """
-        X_tagged = pd.Series(X).apply(self.starting_verb)
-        return pd.DataFrame(X_tagged)
+# importing utils to avoid duplicating code
+sys.path.append('.')
+from utils.text_utils import StartingVerbExtractor, tokenize
 
 
 def load_data(database_filepath):
@@ -79,38 +41,12 @@ def load_data(database_filepath):
     y: DataFrame, target variables (categories).
     """
     engine = create_engine(f'sqlite:///{database_filepath}')
-    df = pd.read_sql_table('Messages', engine, index_col='index').sample(800)
+    df = pd.read_sql_table('Messages', engine, index_col='index')
 
     X = df['message']
     y = df.drop(['id', 'original', 'message', 'genre'], axis=1)
 
     return X, y
-
-
-stop_words = stopwords.words('english') + list(string.punctuation)
-lemmatizer = WordNetLemmatizer()
-url_regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
-def tokenize(text):
-    """
-    Tokenize and clean text by removing URLs, stop words, and applying lemmatization.
-    
-    Args:
-    text: str, input text.
-    
-    Returns:
-    clean_tokens: list, tokenized and cleaned text.
-    """
-    detected_urls = re.findall(url_regex, text)
-    for url in detected_urls:
-        text = text.replace(url, "urlplaceholder")
-
-    # Tokenize text
-    tokens = word_tokenize(text)
-
-    # Remove stopwords and lemmatize to lower case and strip the token
-    clean_tokens = [lemmatizer.lemmatize(tok).lower().strip() for tok in tokens if tok.lower() not in stop_words]
-
-    return clean_tokens
 
 
 def build_model():
@@ -128,7 +64,7 @@ def build_model():
             ('starting_verb', StartingVerbExtractor())
         ])),
         ("clf", MultiOutputClassifier(RandomForestClassifier())),
-    ], verbose=True)
+    ])
 
     rf_params = {
         'features__text_pipeline__vect__ngram_range': ((1, 1), (1, 2)),
@@ -189,7 +125,7 @@ def save_model(model, model_filepath):
     model: GridSearchCV, the trained model.
     model_filepath: str, path to save the pickle file.
     """
-    pd.to_pickle(model, model_filepath)
+    joblib.dump(model, model_filepath, compress=1)
 
 
 def main():
