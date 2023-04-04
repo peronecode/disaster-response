@@ -9,6 +9,13 @@ We use a dataset containing real disaster messages provided by Appen (formerly F
 - `ML Pipeline`: A machine learning pipeline that loads data from the SQLite database, splits the dataset into training and test sets, builds a text processing and machine learning pipeline, trains and tunes a model using GridSearchCV, outputs results on the test set, and exports the final model as a pickle file.
 - `Flask Web App`: A web app where an emergency worker can input a new message and get classification results in several categories. The web app also displays visualizations of the data. Thanks Udacity!
 
+Web App - Home page
+![web-app-1.png](images/web-app-1.png?raw=true)
+
+
+Web App - Classified text page
+![web-app-2.png](images/web-app-2.png?raw=true)
+
 ## Used Libraries
 Note that this code is compatible with `Python 3.8` or higher, and requires a few libraries:
 - `Flask==2.2.3`
@@ -37,6 +44,7 @@ To set up this project on your local machine, follow these steps:
 - `models/`: Contains the ML pipeline script (train_classifier.py) and the trained model as a pickle file.
 requirements.txt: Lists the required Python packages for this project.
 - `utils/`: Contains the text_util.py that was created to avoid duplicated code.
+- `images/`: Screenshots images.
 
 ## Licensing, Author and Acknowledgements
 - Author: [Luccas Perone](https://github.com/peronecode)

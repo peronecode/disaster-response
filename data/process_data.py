@@ -70,6 +70,9 @@ def clean_data(df, categories):
     df = df.drop(['categories'], axis=1)
     df = pd.merge(df, categories, left_index=True, right_index=True)
     df = df.drop_duplicates()
+
+    # Replace valeu two by zero, making binary class.
+    df['related'] = df['related'].replace([2], [0])
     
     return df
 
