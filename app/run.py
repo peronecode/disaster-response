@@ -30,12 +30,15 @@ model = joblib.load("../models/cls_model.pkl")
 def index():
     
     # extract data needed for visuals
-    # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
+
+    # extract data needed for visuals
+    top_categories = df[df.columns[4:]].sum().nlargest(10)
+    categories_counts = list(top_categories.values)
+    categories_names = list(top_categories.index)
     
     # create visuals
-    # TODO: Below is an example - modify to create your own visuals
     graphs = [
         {
             'data': [
@@ -47,6 +50,24 @@ def index():
 
             'layout': {
                 'title': 'Distribution of Message Genres',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Category"
+                }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=categories_names,
+                    y=categories_counts
+                )
+            ],
+
+            'layout': {
+                'title': 'The 10 Most Frequent Categories',
                 'yaxis': {
                     'title': "Count"
                 },
